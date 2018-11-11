@@ -3,6 +3,7 @@ package com.juhnowski.ilya.flikrbrowser
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.Menu
@@ -25,12 +26,6 @@ class MainActivity : BaseActivity(), GetRawData.OnDownloadComplete, GetFlickrJso
         recycler_view.layoutManager = LinearLayoutManager(this)
         recycler_view.addOnItemTouchListener(RecyclerItemClickListener(this,recycler_view, this))
         recycler_view.adapter = flickrRecyclerViewAdapter
-
-        val url = createUrl("https://api.flickr.com/services/feeds/photos_public.gne", "android,oreo", "en-us", true)
-
-        val getRawData = GetRawData(this)
-        getRawData.execute(url)//"https://api.flickr.com/services/feeds/photos_public.gne?format=json&nojsoncallback=1"
-
 
 //        getRawData.setDownloadCompleteListener(this)
 
@@ -66,7 +61,10 @@ class MainActivity : BaseActivity(), GetRawData.OnDownloadComplete, GetFlickrJso
         Log.d(TAG, "onOptionsItemSelected call")
 
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_search -> {
+                startActivity(Intent(this,SearchActivity::class.java))
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -95,6 +93,21 @@ class MainActivity : BaseActivity(), GetRawData.OnDownloadComplete, GetFlickrJso
         Log.d(TAG, "onError called with ${exception.message}")
     }
 
+    override fun onResume() {
+        Log.d(TAG, ".onResume starts")
+        super.onResume()
+
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        val queryResult = sharedPref.getString(FLICKR_QUERY,"")
+
+        if (queryResult.isNotEmpty()) {
+            val url = createUrl("https://api.flickr.com/services/feeds/photos_public.gne", queryResult, "en-us", true)
+            val getRawData = GetRawData(this)
+            getRawData.execute(url)//"https://api.flickr.com/services/feeds/photos_public.gne?format=json&nojsoncallback=1"
+        }
+        Log.d(TAG, ".onResume: ends")
+    }
+
     override fun onItemClick(view: View, position: Int) {
         Log.d(TAG, "onItemClick starts")
         Toast.makeText(this, "Normal tap on position $position",Toast.LENGTH_SHORT).show()
@@ -110,4 +123,6 @@ class MainActivity : BaseActivity(), GetRawData.OnDownloadComplete, GetFlickrJso
             startActivity(intent)
         }
     }
+
+
 }
